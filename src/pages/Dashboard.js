@@ -1,4 +1,7 @@
 import { MedicationTab } from './Medication.js';
+import { AiChat } from './AiChat.js';
+import { ReportsPage } from './Reports.js';
+
 
 export const Dashboard = (parent, user) => {
     let activeTab = 'home';
@@ -20,56 +23,97 @@ export const Dashboard = (parent, user) => {
 
     const homeContent = () => `
     <div class="tab-content fade-in">
-      <div class="dashboard-header">
-        <p style="opacity: 0.8; font-size: 0.9rem;">Welcome back,</p>
-        <h1 style="font-size: 1.8rem; font-weight: 700;">${user?.name || 'User'}</h1>
-        <div id="logout-btn" style="position: absolute; top: 2.5rem; right: 1.5rem; width: 44px; height: 44px; border-radius: 14px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Logout">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+      <!-- Clean White Header -->
+      <div style="background:white; padding:1.2rem 1.4rem 1rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1f5f9;">
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <div style="width:40px; height:40px; background:#e0ebff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;">🧑</div>
+          <div>
+            <p style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">Good Morning,</p>
+            <p style="font-size:1rem; font-weight:800; color:var(--text-main);">${user?.name || 'User'}</p>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <div id="open-chat-btn" style="width:38px; height:38px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="AI Assistant">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" x2="6" y1="1" y2="4"/><line x1="10" x2="10" y1="1" y2="4"/><line x1="14" x2="14" y1="1" y2="4"/>
+            </svg>
+          </div>
+          <div style="width:38px; height:38px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
         </div>
       </div>
 
-      <div class="health-score-card">
-        <div>
-          <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.2rem; color: var(--text-main);">Health Score</h3>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">You're doing great!</p>
+      <div style="padding: 1.5rem;">
+        <!-- Latest Report -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.7rem;">
+          <h3 style="font-size:1rem; font-weight:800; color:var(--text-main);">Latest Report</h3>
+          <span id="view-all-reports" style="color:var(--primary); font-size:0.8rem; font-weight:600; cursor:pointer;">View All</span>
         </div>
-        <div class="score-circle">78</div>
+
+        <div style="background:white; border-radius:18px; box-shadow:0 4px 18px rgba(0,0,0,0.06); border:1px solid #f1f5f9; overflow:hidden; margin-bottom:1.4rem;">
+
+          <!-- Report title row -->
+          <div style="display:flex; align-items:center; gap:0.8rem; padding:1rem 1rem 0.85rem;">
+            <div style="width:38px; height:38px; background:#eff6ff; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>
+            </div>
+            <div style="flex:1; min-width:0;">
+              <p style="font-weight:700; font-size:0.88rem; color:var(--text-main);">Blood Panel Results</p>
+              <p style="font-size:0.7rem; color:var(--text-muted); margin-top:1px;">Updated 2 days ago</p>
+            </div>
+          </div>
+
+
+
+          <!-- Quick Insight -->
+          <div style="margin:0.8rem 0.9rem 0.9rem; background:#eff6ff; border-radius:13px; padding:0.7rem 0.9rem; display:flex; gap:0.6rem; align-items:flex-start;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--primary)" stroke="none" style="flex-shrink:0; margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12" stroke="white" stroke-width="2"/><line x1="12" x2="12.01" y1="16" y2="16" stroke="white" stroke-width="2"/></svg>
+            <div>
+              <p style="font-size:0.73rem; font-weight:700; color:var(--primary); margin-bottom:3px;">Quick Insight</p>
+              <p style="font-size:0.74rem; color:#475569; line-height:1.5;">Your Vitamin D levels are slightly low. Consider 15 mins of morning sun or a supplement as discussed with your AI assistant.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Meds Section -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+          <h3 style="font-size:1rem; font-weight:800; color:var(--text-main);">Today's Meds</h3>
+          <span style="color:var(--text-muted); font-size:0.78rem; font-weight:600;">3 of 4 taken</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:0.65rem; padding-bottom:5rem;">
+          ${[
+            { name: 'Multivitamin', dose: '1 Tablet', time: '08:00 AM', taken: true },
+            { name: 'Metformin', dose: '500 mg', time: '01:00 PM', taken: true },
+            { name: 'Aspirin', dose: '100 mg', time: '09:00 PM', taken: false },
+        ].map(m => `
+            <div style="background:white; border-radius:16px; padding:0.85rem 1rem; display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f5f9; box-shadow:0 2px 10px rgba(0,0,0,0.03);" id="tab-medication-link">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div style="width:40px; height:40px; background:${m.taken ? '#dcfce7' : '#f1f5f9'}; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                  ${m.taken
+                ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
+                : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>`
+            }
+                </div>
+                <div>
+                  <p style="font-weight:700; font-size:0.87rem; color:var(--text-main);">${m.name}</p>
+                  <p style="font-size:0.72rem; color:var(--text-muted);">${m.dose} · ${m.time}</p>
+                </div>
+              </div>
+              ${m.taken
+                ? `<span style="background:#dcfce7; color:#16a34a; font-size:0.62rem; font-weight:700; padding:3px 9px; border-radius:50px; letter-spacing:0.3px; flex-shrink:0;">TAKEN</span>`
+                : `<span style="background:#f1f5f9; color:#64748b; font-size:0.62rem; font-weight:700; padding:3px 9px; border-radius:50px; letter-spacing:0.3px; flex-shrink:0;">PENDING</span>`
+            }
+            </div>
+          `).join('')}
+        </div>
       </div>
 
-      <div style="padding: 0 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-          <h3 style="font-weight: 700;">Daily Medication</h3>
-          <span style="color: var(--primary); font-size: 0.85rem; font-weight: 600; cursor:pointer;" id="tab-medication-link">View All</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 0.8rem;">
-          <div style="background: white; border-radius: 20px; padding: 1rem 1.2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <div style="width: 44px; height: 44px; background: #fee2e2; border-radius: 14px; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></div>
-              <div><p style="font-weight: 700; color: var(--text-main); font-size:0.95rem;">Aspirin</p><p style="font-size: 0.78rem; color: var(--text-muted);">8:00 AM · 500mg</p></div>
-            </div>
-            <div style="width: 22px; height: 22px; border: 2px solid #e2e8f0; border-radius: 6px;"></div>
-          </div>
-          <div style="background: white; border-radius: 20px; padding: 1rem 1.2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <div style="width: 44px; height: 44px; background: #dcfce7; border-radius: 14px; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.7 10-10 10Z"/><path d="M19 21c-2.43-1.84-2.8-5.59-3.41-8.31"/></svg></div>
-              <div><p style="font-weight: 700; color: var(--text-main); font-size:0.95rem;">Vitamin D</p><p style="font-size: 0.78rem; color: var(--text-muted);">2:00 PM · 1 Tab</p></div>
-            </div>
-            <div style="width: 22px; height: 22px; border: 2px solid #e2e8f0; border-radius: 6px;"></div>
-          </div>
-        </div>
-
-        <h3 style="margin: 1.5rem 0 1rem 0; font-weight: 700;">Quick Actions</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-bottom: 1rem;">
-          <div style="background: white; padding: 1.2rem; border-radius: 20px; cursor: pointer; border: 1px solid #f1f5f9; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
-            <div style="width: 42px; height: 42px; background: #eff6ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.8rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg></div>
-            <p style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">Upload Report</p>
-            <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">PDF or Image</p>
-          </div>
-          <div style="background: white; padding: 1.2rem; border-radius: 20px; cursor: pointer; border: 1px solid #f1f5f9; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
-            <div style="width: 42px; height: 42px; background: #fdf2f8; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.8rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#db2777" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></div>
-            <p style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">Talk to AI</p>
-            <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Health Assistant</p>
-          </div>
+      <!-- Upload Report FAB -->
+      <div id="upload-report-fab" style="position:sticky; bottom:1rem; display:flex; justify-content:flex-end; padding-right:1rem; pointer-events:none;">
+        <div style="background:var(--primary); color:white; border-radius:50px; padding:0.65rem 1.1rem; display:flex; align-items:center; gap:0.5rem; box-shadow:0 6px 20px rgba(0,82,204,0.38); cursor:pointer; pointer-events:all;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" x2="12" y1="18" y2="12"/><line x1="9" x2="15" y1="15" y2="15"/></svg>
+          <span style="font-size:0.8rem; font-weight:700; font-family:'Poppins',sans-serif;">Upload Report</span>
         </div>
       </div>
     </div>
@@ -109,10 +153,17 @@ export const Dashboard = (parent, user) => {
     </div>
   `;
 
+    const openReportsPage = () => {
+        activeTab = 'reports';
+        render();
+        const tabBody = parent.querySelector('#tab-body');
+        if (tabBody) ReportsPage(tabBody);
+    };
+
     const getTabContent = () => {
         switch (activeTab) {
             case 'home': return homeContent();
-            case 'reports': return placeholderTab('Reports', icons.reports);
+            case 'reports': return '';
             case 'medication': return '';
             case 'profile': return profileTab();
             default: return homeContent();
@@ -142,8 +193,12 @@ export const Dashboard = (parent, user) => {
         // Tab switching
         parent.querySelectorAll('.bottom-nav-tab').forEach(btn => {
             btn.addEventListener('click', () => {
-                activeTab = btn.dataset.tab;
-                render();
+                if (btn.dataset.tab === 'reports') {
+                    openReportsPage();
+                } else {
+                    activeTab = btn.dataset.tab;
+                    render();
+                }
             });
         });
 
@@ -154,7 +209,7 @@ export const Dashboard = (parent, user) => {
             medTab.render(body);
         }
 
-        // Logout
+        // Logout + chat + tab-medication-link + view-all-reports
         parent.addEventListener('click', e => {
             if (e.target.closest('#logout-btn')) {
                 localStorage.removeItem('user');
@@ -164,7 +219,18 @@ export const Dashboard = (parent, user) => {
                 activeTab = 'medication';
                 render();
             }
+            if (e.target.closest('#open-chat-btn')) {
+                AiChat(parent, {
+                    onBack: () => render(),
+                    user,
+                });
+            }
+            if (e.target.closest('#view-all-reports')) {
+                openReportsPage();
+            }
         });
+
+
     };
 
     render();

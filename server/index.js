@@ -6,6 +6,8 @@ import { dirname, join } from 'path';
 
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
+import chatRoutes from './routes/chat.js';
+
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, '..', '.env') });
@@ -18,6 +20,8 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/chat', chatRoutes);
+
 
 app.get('/health', (_, res) => res.json({ status: 'ok' }));
 
