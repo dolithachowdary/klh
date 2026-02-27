@@ -1,3 +1,5 @@
+import { MedicationTab } from './Medication.js';
+
 export const Dashboard = (parent, user) => {
     let activeTab = 'home';
 
@@ -81,6 +83,11 @@ export const Dashboard = (parent, user) => {
     </div>
   `;
 
+    const medicationContent = (bodyEl) => {
+        const tab = MedicationTab();
+        tab.render(bodyEl);
+    };
+
     const profileTab = () => `
     <div class="tab-content fade-in" style="padding: 2rem 1.5rem;">
       <h2 style="font-size:1.5rem; font-weight:800; color:var(--text-main); margin-bottom:0.3rem;">${user?.name || 'User'}</h2>
@@ -106,7 +113,7 @@ export const Dashboard = (parent, user) => {
         switch (activeTab) {
             case 'home': return homeContent();
             case 'reports': return placeholderTab('Reports', icons.reports);
-            case 'medication': return placeholderTab('Medication', icons.medication);
+            case 'medication': return '';
             case 'profile': return profileTab();
             default: return homeContent();
         }
@@ -139,6 +146,13 @@ export const Dashboard = (parent, user) => {
                 render();
             });
         });
+
+        // Render medication tab separately (has its own state)
+        if (activeTab === 'medication') {
+            const body = parent.querySelector('#tab-body');
+            const medTab = MedicationTab();
+            medTab.render(body);
+        }
 
         // Logout
         parent.addEventListener('click', e => {
