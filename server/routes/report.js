@@ -1,4 +1,5 @@
 import express from 'express';
+import sql from '../db.js';
 
 const router = express.Router();
 const GROQ_API = 'https://api.groq.com/openai/v1/chat/completions';
@@ -69,6 +70,23 @@ router.post('/summary', async (req, res) => {
     } catch (err) {
         console.error('Report generation error:', err.message);
         res.status(500).json({ error: 'Failed to generate report summary.' });
+    }
+});
+
+// GET /api/report/user/:userId
+router.get('/user/:userId', async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const reports = await sql`
+            SELECT * FROM reports 
+            WHERE user_id = ${userId} 
+            ORDER BY report_date DESC, created_at DESC
+        `;
+        res.json(reports);
+    } catch (err) {
+        console.error('Fetch reports error:', err.message);
+        res.status(500).json({ error: 'Failed to fetch reports.' });
     }
 });
 

@@ -1,11 +1,9 @@
-export const ReportsPage = (parent) => {
-  const reports = [
-    { lab: 'City Lab Diagnostics', date: 'Oct 24, 2023', status: 'abnormal', markers: 2 },
-    { lab: 'Central Health Lab', date: 'Sep 12, 2023', status: 'normal', markers: 0 },
-    { lab: 'Global Diagnostics', date: 'Aug 05, 2023', status: 'abnormal', markers: 1 },
-    { lab: 'Evergreen Medical Lab', date: 'Jun 18, 2023', status: 'normal', markers: 0 },
-    { lab: 'Apollo Health Centre', date: 'Mar 02, 2023', status: 'normal', markers: 0 },
-  ];
+import { ReportView } from './ReportView.js';
+
+export const ReportsPage = (parent, user) => {
+  let reports = [];
+  let loading = true;
+  let error = null;
 
   let query = '';
 
@@ -25,27 +23,32 @@ export const ReportsPage = (parent) => {
     </svg>`;
 
   function statusBadge(r) {
-    if (r.status === 'normal') {
+    if (r.risk_level?.toLowerCase() === 'normal' || !r.risk_level) {
       return `<span style="background:#dcfce7; color:#16a34a; font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:50px;">Normal</span>`;
     }
-    const label = r.markers === 1 ? '1 Abnormal Marker' : `${r.markers} Abnormal Markers`;
-    return `<span style="background:#fee2e2; color:#dc2626; font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:50px;">${label}</span>`;
+    return `<span style="background:#fee2e2; color:#dc2626; font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:50px;">${r.risk_level}</span>`;
   }
 
   function renderList() {
+    if (loading) {
+      return `<p style="text-align:center; color:var(--text-muted); margin-top:3rem; font-size:0.85rem; letter-spacing:0.3px;">Loading reports...</p>`;
+    }
+    if (error) {
+      return `<p style="text-align:center; color:#94a3b8; margin-top:3rem; font-size:0.85rem; letter-spacing:0.3px;">No reports history</p>`;
+    }
     const filtered = reports.filter(r =>
-      r.lab.toLowerCase().includes(query.toLowerCase()) ||
-      r.date.toLowerCase().includes(query.toLowerCase())
+      (r.lab_name || '').toLowerCase().includes(query.toLowerCase()) ||
+      (r.report_date || '').toLowerCase().includes(query.toLowerCase())
     );
     if (!filtered.length) {
-      return `<p style="text-align:center; color:var(--text-muted); margin-top:2rem; font-size:0.85rem;">No reports found.</p>`;
+      return `<p style="text-align:center; color:#94a3b8; margin-top:3rem; font-size:0.85rem; letter-spacing:0.3px;">No reports history</p>`;
     }
     return filtered.map(r => `
-      <div style="background:white; border-radius:18px; padding:1rem 1.1rem; display:flex; align-items:center; gap:0.85rem; box-shadow:0 2px 12px rgba(0,0,0,0.04); border:1px solid #f1f5f9; cursor:pointer;">
+      <div style="background:white; border-radius:18px; padding:1rem 1.1rem; display:flex; align-items:center; gap:0.85rem; box-shadow:0 2px 12px rgba(0,0,0,0.04); border:1px solid #f1f5f9; cursor:pointer;" class="report-item" data-id="${r.id}">
         ${docIcon}
         <div style="flex:1; min-width:0;">
-          <p style="font-weight:700; font-size:0.9rem; color:var(--text-main);">${r.lab}</p>
-          <p style="font-size:0.72rem; color:var(--text-muted); margin:2px 0 6px;">${r.date}</p>
+          <p style="font-weight:700; font-size:0.85rem; color:var(--text-main);">${r.lab_name || 'General Report'}</p>
+          <p style="font-size:0.68rem; color:var(--text-muted); margin:2px 0 6px;">${r.report_date ? new Date(r.report_date).toLocaleDateString() : 'No date'}</p>
           ${statusBadge(r)}
         </div>
         ${chevron}
@@ -59,7 +62,7 @@ export const ReportsPage = (parent) => {
 
         <!-- Header -->
         <div style="background:white; padding:1.1rem 1.2rem 0.9rem; border-bottom:1px solid #f1f5f9; flex-shrink:0;">
-          <p style="font-size:1rem; font-weight:800; color:var(--text-main); text-align:center;">Reports History</p>
+          <p style="font-size:0.92rem; font-weight:700; color:var(--text-main); text-align:center;">Reports History</p>
         </div>
 
         <!-- Search -->
@@ -85,7 +88,43 @@ export const ReportsPage = (parent) => {
       query = e.target.value;
       parent.querySelector('#reports-list').innerHTML = renderList();
     });
+
+    parent.querySelector('#reports-list').addEventListener('click', e => {
+      const item = e.target.closest('.report-item');
+      if (item) {
+        const id = item.dataset.id;
+        const report = reports.find(r => r.id === id);
+        if (report) {
+          ReportView(parent, {
+            report,
+            onBack: () => render()
+          });
+        }
+      }
+    });
   }
 
+  async function fetchReports() {
+    if (!user?.id) {
+      loading = false;
+      error = "User not found. Please log in again.";
+      render();
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:3001/api/report/user/${user.id}`);
+      if (!res.ok) throw new Error('Failed to fetch reports');
+      reports = await res.json();
+    } catch (err) {
+      console.error(err);
+      error = "Could not load reports history.";
+    } finally {
+      loading = false;
+      render();
+    }
+  }
+
+  fetchReports();
   render();
 };

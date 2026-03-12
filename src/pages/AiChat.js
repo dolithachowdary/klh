@@ -1,4 +1,4 @@
-export const AiChat = (parent, { onBack, user, autoOpenPin = false }) => {
+export const AiChat = (parent, { onBack, user, autoOpenPin = false, reportContext = null }) => {
   // Determine API base dynamically to support local IP testing (mobile)
   const API_BASE = window.location.origin.replace(':5173', ':3001');
 
@@ -9,7 +9,9 @@ export const AiChat = (parent, { onBack, user, autoOpenPin = false }) => {
   const displayMsgs = [
     {
       role: 'bot',
-      text: `Hello${user?.name ? ' ' + user.name.split(' ')[0] : ''}! 👋 I'm **MediBot**, your personal health assistant.\n\nI can help you understand your reports, medications, lab values, or anything health-related. What's on your mind today?`,
+      text: reportContext 
+        ? `I see you're looking at your **${reportContext.lab_name || 'Lab'}** report from **${reportContext.report_date ? new Date(reportContext.report_date).toLocaleDateString() : 'recently'}**. How can I help you understand these results?`
+        : `Hello${user?.name ? ' ' + user.name.split(' ')[0] : ''}! 👋 I'm **MediBot**, your personal health assistant.\n\nI can help you understand your reports, medications, lab values, or anything health-related. What's on your mind today?`,
       time: formatTime(new Date()),
     },
   ];
@@ -64,22 +66,22 @@ export const AiChat = (parent, { onBack, user, autoOpenPin = false }) => {
       ? `<div style="display:flex; gap:0.7rem; align-items:flex-end; margin-bottom:1rem;">
            ${botAvatar}
            <div style="max-width:72%;">
-             <p style="font-size:0.62rem; color:var(--text-muted); margin-bottom:3px;">MediBot</p>
-             <div style="background:white; border-radius:4px 18px 18px 18px; padding:0.75rem 1rem;
+             <p style="font-size:0.6rem; color:var(--text-muted); margin-bottom:3px;">MediBot</p>
+             <div style="background:white; border-radius:4px 18px 18px 18px; padding:0.7rem 0.9rem;
                          box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid #f1f5f9;">
-               <p style="font-size:0.84rem; color:var(--text-main); line-height:1.55;">${parseMd(m.text)}</p>
+               <p style="font-size:0.82rem; color:var(--text-main); line-height:1.5;">${parseMd(m.text)}</p>
              </div>
-             <p style="font-size:0.6rem; color:var(--text-muted); margin-top:3px;">${m.time}</p>
+             <p style="font-size:0.58rem; color:var(--text-muted); margin-top:3px;">${m.time}</p>
            </div>
          </div>`
       : `<div style="display:flex; gap:0.7rem; align-items:flex-end; flex-direction:row-reverse; margin-bottom:1rem;">
            ${userAvatar}
            <div style="max-width:72%;">
-             <p style="font-size:0.62rem; color:var(--text-muted); margin-bottom:3px; text-align:right;">You</p>
-             <div style="background:var(--primary); border-radius:18px 4px 18px 18px; padding:0.75rem 1rem;">
-               <p style="font-size:0.84rem; color:white; line-height:1.55;">${parseMd(m.text)}</p>
+             <p style="font-size:0.6rem; color:var(--text-muted); margin-bottom:3px; text-align:right;">You</p>
+             <div style="background:var(--primary); border-radius:18px 4px 18px 18px; padding:0.7rem 0.9rem;">
+               <p style="font-size:0.82rem; color:white; line-height:1.5;">${parseMd(m.text)}</p>
              </div>
-             <p style="font-size:0.6rem; color:var(--text-muted); margin-top:3px; text-align:right;">${m.time}</p>
+             <p style="font-size:0.58rem; color:var(--text-muted); margin-top:3px; text-align:right;">${m.time}</p>
            </div>
          </div>`
     ).join('');
@@ -173,10 +175,10 @@ export const AiChat = (parent, { onBack, user, autoOpenPin = false }) => {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
           <div style="flex:1; text-align:center;">
-            <p style="font-weight:800; font-size:0.97rem; color:var(--text-main);">Medical Assistant</p>
+            <p style="font-weight:700; font-size:0.92rem; color:var(--text-main);">Medical Assistant</p>
             <div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:2px;">
-              <div style="width:7px; height:7px; background:#22c55e; border-radius:50%;"></div>
-              <p style="font-size:0.7rem; color:#22c55e; font-weight:600;">AI is online</p>
+              <div style="width:6px; height:6px; background:#22c55e; border-radius:50%;"></div>
+              <p style="font-size:0.65rem; color:#22c55e; font-weight:600;">AI is online</p>
             </div>
           </div>
           <button style="background:none; border:none; cursor:pointer; padding:0.2rem; color:var(--text-muted); display:flex;">
@@ -250,7 +252,7 @@ export const AiChat = (parent, { onBack, user, autoOpenPin = false }) => {
           </button>
 
           <input id="chat-input" type="text" placeholder="Ask about your health..."
-                 style="flex:1; border:none; outline:none; font-size:0.84rem; font-family:'Poppins',sans-serif; color:var(--text-main); background:transparent; min-width:0;" />
+                 style="flex:1; border:none; outline:none; font-size:0.82rem; font-family:'Poppins',sans-serif; color:var(--text-main); background:transparent; min-width:0;" />
           <button id="send-btn"
                   style="width:40px; height:40px; background:var(--primary); border:none; border-radius:50%; cursor:pointer;
                          display:flex; align-items:center; justify-content:center;

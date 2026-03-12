@@ -3,6 +3,7 @@ import multer from 'multer';
 import fs from 'fs/promises';
 import path from 'path';
 import { GoogleGenAI } from '@google/genai';
+import sql from '../db.js';
 
 const router = express.Router();
 const upload = multer({
@@ -178,6 +179,41 @@ router.post('/report', upload.single('report'), async (req, res) => {
         try { patient = JSON.parse(req.body.patient || '{}'); } catch { }
 
         const report = await analyseExtractedText(extractedText, patient);
+        await logToFile(`Analysis result for user ${patient.id || 'ANONYMOUS'}: ${report?.lab_name || 'Generic'}`);
+
+        // Stage 3: Persist to Database
+        if (patient.id) {
+            await logToFile(`Attempting to save report for user: ${patient.id}`);
+            try {
+                const markersJson = JSON.stringify(report?.findings || []);
+                const reportDate = report?.report_date && !isNaN(Date.parse(report.report_date)) 
+                    ? new Date(report.report_date) 
+                    : new Date();
+
+                await sql`
+                    INSERT INTO reports (
+                        user_id, 
+                        lab_name, 
+                        report_date, 
+                        summary, 
+                        markers, 
+                        risk_level
+                    ) VALUES (
+                        ${patient.id}, 
+                        ${report?.lab_name || originalname}, 
+                        ${reportDate}, 
+                        ${report?.summary || ''}, 
+                        ${markersJson}, 
+                        ${report?.overall_status || 'Normal'}
+                    )
+                `;
+                await logToFile(`SUCCESS: Report saved to database.`);
+            } catch (dbErr) {
+                await logToFile(`DATABASE ERROR: ${dbErr.message}`);
+                console.error('DB Insert Error:', dbErr);
+            }
+        }
+
         res.json({ ok: true, report });
 
     } catch (err) {

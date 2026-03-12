@@ -88,8 +88,8 @@ export const MedicationTab = (user) => {
     <div class="tab-content fade-in" style="padding-bottom:5rem; position:relative;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; padding:1.8rem 1.5rem 0.8rem;">
         <div>
-          <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-main);">Daily Meds</h2>
-          <p style="color:var(--text-muted); font-size:0.78rem;">
+          <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-main);">Daily Meds</h2>
+          <p style="color:var(--text-muted); font-size:0.75rem;">
             ${DAY_NAMES[selectedDate.getDay()]}, ${MONTHS[selectedDate.getMonth()]} ${selectedDate.getDate()}
           </p>
         </div>
@@ -106,11 +106,11 @@ export const MedicationTab = (user) => {
                       padding:0.5rem 0.2rem; border-radius:14px; cursor:pointer;
                       background:${isSelected ? 'var(--primary)' : isToday ? '#eff6ff' : '#f8fafc'};
                       border:${isToday && !isSelected ? '1.5px solid var(--primary)' : 'none'};">
-            <span style="font-size:0.57rem; font-weight:600;
+            <span style="font-size:0.55rem; font-weight:600;
                          color:${isSelected ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)'};">
               ${DAY_NAMES[d.getDay()].toUpperCase().slice(0, 3)}
             </span>
-            <span style="font-size:0.95rem; font-weight:700; margin-top:2px;
+            <span style="font-size:0.85rem; font-weight:700; margin-top:2px;
                          color:${isSelected ? 'white' : 'var(--text-main)'};">${d.getDate()}</span>
           </div>
         `).join('')}
@@ -119,10 +119,10 @@ export const MedicationTab = (user) => {
       <div style="margin:0 1.5rem 1.1rem; background:${totalDoses > 0 && takenDoses === totalDoses ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'var(--primary)'}; border-radius:20px; padding:1.1rem 1.3rem; position:relative; overflow:hidden;">
         <div style="position:absolute; right:-16px; bottom:-22px; width:90px; height:90px; background:rgba(255,255,255,0.08); border-radius:50%;"></div>
         ${totalDoses > 0 && takenDoses === totalDoses
-        ? `<p style="color:white; font-weight:700; font-size:1.05rem; margin-bottom:2px;">🎉 All done!</p>
-             <p style="color:rgba(255,255,255,0.85); font-size:0.77rem; margin-bottom:0.8rem;">You took all your medications today</p>`
-        : `<p style="color:white; font-weight:700; font-size:0.95rem; margin-bottom:2px;">Daily Progress</p>
-             <p style="color:rgba(255,255,255,0.7); font-size:0.77rem; margin-bottom:0.8rem;">${takenDoses} of ${totalDoses} doses taken</p>`
+        ? `<p style="color:white; font-weight:700; font-size:0.95rem; margin-bottom:2px;">🎉 All done!</p>
+             <p style="color:rgba(255,255,255,0.85); font-size:0.72rem; margin-bottom:0.8rem;">You took all your medications today</p>`
+        : `<p style="color:white; font-weight:700; font-size:0.85rem; margin-bottom:2px;">Daily Progress</p>
+             <p style="color:rgba(255,255,255,0.7); font-size:0.72rem; margin-bottom:0.8rem;">${takenDoses} of ${totalDoses} doses taken</p>`
       }
         <div style="background:rgba(255,255,255,0.3); border-radius:50px; height:7px; overflow:hidden;">
           <div style="background:white; height:100%; width:${pct}%; border-radius:50px; transition:width 0.4s;"></div>
@@ -131,8 +131,8 @@ export const MedicationTab = (user) => {
 
       <div style="padding:0 1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.9rem;">
-          <h3 style="font-size:1rem; font-weight:800; color:var(--text-main);">Today's Schedule</h3>
-          <button id="add-med-btn" style="color:var(--primary); background:none; border:none; font-size:0.85rem; font-weight:700; cursor:pointer;">+ Add New</button>
+          <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-main);">Today's Schedule</h3>
+          <button id="add-med-btn" style="color:var(--primary); background:none; border:none; font-size:0.8rem; font-weight:700; cursor:pointer;">+ Add New</button>
         </div>
 
         ${loading ? '<p style="text-align:center; color:var(--text-muted); padding:2rem;">Loading...</p>' : ''}
@@ -146,8 +146,8 @@ export const MedicationTab = (user) => {
                   ${pillIcon('var(--primary)')}
                 </div>
                 <div>
-                  <p style="font-weight:700; font-size:0.92rem; color:var(--text-main);">${m.name}</p>
-                  <p style="font-size:0.75rem; color:var(--text-muted);">${m.dosage || ''} · ${m.dose_type.charAt(0).toUpperCase() + m.dose_type.slice(1)}</p>
+                  <p style="font-weight:700; font-size:0.82rem; color:var(--text-main);">${m.name}</p>
+                  <p style="font-size:0.72rem; color:var(--text-muted);">${m.dosage || ''} · ${m.dose_type.charAt(0).toUpperCase() + m.dose_type.slice(1)}</p>
                 </div>
               </div>
               <button class="med-check-btn" data-id="${m.id}" data-type="${m.dose_type}" data-taken="${m.taken}"
