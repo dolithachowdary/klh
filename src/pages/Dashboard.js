@@ -8,6 +8,8 @@ export const Dashboard = (parent, user) => {
     let activeTab = 'home';
     let latestReport = null;
     let loadingReport = true;
+    let medications = [];
+    let medicationLogs = [];
 
     // Lucide SVG paths for each tab
     const icons = {
@@ -24,7 +26,12 @@ export const Dashboard = (parent, user) => {
         { id: 'profile', label: 'Profile' },
     ];
 
-    const homeContent = () => `
+    const homeContent = () => {
+        const todayLogs = medicationLogs || [];
+        const takenCount = medications.filter(m => todayLogs.some(l => l.medication_id === m.id)).length;
+        const totalCount = medications.length;
+
+        return `
     <div class="tab-content fade-in">
       <!-- Clean White Header -->
       <div style="background:white; padding:1.2rem 1.4rem 1rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1f5f9;">
@@ -101,53 +108,52 @@ export const Dashboard = (parent, user) => {
             <span style="font-size:0.78rem; color:#94a3b8; font-weight:500;">Ask anything about your health...</span>
           </div>
 
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.8rem;">
-            <div id="home-upload-btn" style="background:var(--primary); color:white; border-radius:14px; padding:0.85rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; cursor:pointer; box-shadow:0 4px 12px rgba(0,82,204,0.22);">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <span style="font-size:0.82rem; font-weight:700;">Upload Lab</span>
-            </div>
-            <div id="home-chat-btn" style="background:#eff6ff; color:var(--primary); border-radius:14px; padding:0.85rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; cursor:pointer; border:1.5px solid #dbeafe;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <span style="font-size:0.82rem; font-weight:700;">Deep Chat</span>
-            </div>
+          <div id="home-upload-btn" style="background:#eff6ff; color:var(--primary); border-radius:12px; padding:0.65rem; display:flex; align-items:center; justify-content:center; gap:0.55rem; cursor:pointer; border:1px solid #dbeafe;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span style="font-size:0.8rem; font-weight:700;">Upload Lab Report</span>
           </div>
         </div>
 
         <!-- Today's Meds Section -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
           <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-main);">Today's Meds</h3>
-          <span style="color:var(--text-muted); font-size:0.75rem; font-weight:600;">3 of 4 taken</span>
+          <span style="color:var(--text-muted); font-size:0.75rem; font-weight:600;">${takenCount} of ${totalCount} taken</span>
         </div>
-        <div style="display:flex; flex-direction:column; gap:0.65rem; padding-bottom:5rem;">
-          ${[
-            { name: 'Multivitamin', dose: '1 Tablet', time: '08:00 AM', taken: true },
-            { name: 'Metformin', dose: '500 mg', time: '01:00 PM', taken: true },
-            { name: 'Aspirin', dose: '100 mg', time: '09:00 PM', taken: false },
-        ].map(m => `
-            <div style="background:white; border-radius:16px; padding:0.85rem 1rem; display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f5f9; box-shadow:0 2px 10px rgba(0,0,0,0.03);" id="tab-medication-link">
+        <div style="display:flex; flex-direction:column; gap:0.65rem; padding-bottom:1.5rem;">
+          ${medications.length === 0 ? `
+            <div style="background:#f8fafc; border-radius:16px; padding:1.5rem; text-align:center; border:1px dashed #cbd5e1; cursor:pointer;" id="tab-medication-link-empty">
+                <p style="font-size:0.75rem; color:var(--text-muted);">No medications scheduled for today.</p>
+            </div>
+          ` : medications.map(m => {
+            const isTaken = todayLogs.some(l => l.medication_id === m.id);
+            return `
+            <div style="background:white; border-radius:16px; padding:0.85rem 1rem; display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f5f9; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width:40px; height:40px; background:${m.taken ? '#dcfce7' : '#f1f5f9'}; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                  ${m.taken
-                ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
-                : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>`
+                <div style="width:40px; height:40px; background:${isTaken ? '#dcfce7' : '#f1f5f9'}; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;" class="med-toggle-btn" data-id="${m.id}" data-taken="${isTaken}">
+                  ${isTaken
+                ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
+                : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><circle cx="12" cy="12" r="10"/></svg>`
             }
                 </div>
-                <div>
+                <div class="med-info-click" data-id="${m.id}" style="cursor:pointer;">
                   <p style="font-weight:700; font-size:0.82rem; color:var(--text-main);">${m.name}</p>
-                  <p style="font-size:0.7rem; color:var(--text-muted);">${m.dose} · ${m.time}</p>
+                  <p style="font-size:0.7rem; color:var(--text-muted);">${m.dosage || ''} · ${m.frequency || 'Daily'}</p>
                 </div>
               </div>
-              ${m.taken
+              ${isTaken
                 ? `<span style="background:#dcfce7; color:#16a34a; font-size:0.62rem; font-weight:700; padding:3px 9px; border-radius:50px; letter-spacing:0.3px; flex-shrink:0;">TAKEN</span>`
                 : `<span style="background:#f1f5f9; color:#64748b; font-size:0.62rem; font-weight:700; padding:3px 9px; border-radius:50px; letter-spacing:0.3px; flex-shrink:0;">PENDING</span>`
             }
             </div>
-          `).join('')}
+          `}).join('')}
         </div>
       </div>
 
     </div>
   `;
+    };
 
     const placeholderTab = (title, icon) => `
     <div class="tab-content fade-in" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:70%; gap:1rem; color: var(--text-muted);">
@@ -240,14 +246,38 @@ export const Dashboard = (parent, user) => {
         }
 
         // Logout + chat + tab-medication-link + view-all-reports + FAB upload
-        parent.addEventListener('click', e => {
+        parent.addEventListener('click', async e => {
             if (e.target.closest('#logout-btn')) {
                 localStorage.removeItem('user');
                 location.reload();
             }
-            if (e.target.closest('#tab-medication-link')) {
+            if (e.target.closest('#tab-medication-link') || e.target.closest('.med-info-click') || e.target.closest('#tab-medication-link-empty')) {
                 activeTab = 'medication';
                 render();
+            }
+            if (e.target.closest('.med-toggle-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const btn = e.target.closest('.med-toggle-btn');
+                const medId = btn.dataset.id;
+                const taken = btn.dataset.taken === 'true';
+                
+                try {
+                    await fetch('http://localhost:3001/api/medication/log', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: user.id,
+                            medication_id: medId,
+                            log_date: new Date().toISOString().split('T')[0],
+                            dose_type: 'morning', // default for now
+                            taken: !taken
+                        })
+                    });
+                    fetchLatestData();
+                } catch (err) {
+                    console.error('Toggle dose error:', err);
+                }
             }
             if (e.target.closest('#open-chat-btn')) {
                 AiChat(parent, {
@@ -292,13 +322,24 @@ export const Dashboard = (parent, user) => {
     const fetchLatestData = async () => {
         if (!user?.id) return;
         try {
-            const res = await fetch(`http://localhost:3001/api/report/user/${user.id}`);
-            if (res.ok) {
-                const reports = await res.json();
+            // 1. Fetch Latest Report
+            const reportRes = await fetch(`http://localhost:3001/api/report/user/${user.id}`);
+            if (reportRes.ok) {
+                const reports = await reportRes.json();
                 latestReport = reports.length > 0 ? reports[0] : null;
             }
+
+            // 2. Fetch Todays Meds
+            const date = new Date().toISOString().split('T')[0];
+            const medRes = await fetch(`http://localhost:3001/api/medication?user_id=${user.id}&date=${date}`);
+            if (medRes.ok) {
+                const data = await medRes.json();
+                medications = data.medications || [];
+                medicationLogs = data.logs || [];
+            }
+
         } catch (err) {
-            console.error('Failed to fetch latest report:', err);
+            console.error('Failed to fetch latest data:', err);
         } finally {
             loadingReport = false;
             if (activeTab === 'home') render();

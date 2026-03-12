@@ -10,7 +10,6 @@ import chatRoutes from './routes/chat.js';
 import reportRoutes from './routes/report.js';
 import uploadRoutes from './routes/upload.js';
 import medicationRoutes from './routes/medication.js';
-import { connectMongo } from './mongodb.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, '..', '.env') });
@@ -34,9 +33,6 @@ app.get('/health', (_, res) => res.json({ status: 'ok' }));
 // Serve local uploads
 const uploadsDir = join(__dirname, 'public', 'uploads');
 app.use('/uploads', express.static(uploadsDir));
-
-// Connect to MongoDB
-connectMongo();
 
 app.listen(PORT, () => {
     console.log(`API server running on http://localhost:${PORT}`);

@@ -36,7 +36,7 @@ router.post('/', async (req, res) => {
                     SELECT brief, summary, markers 
                     FROM reports 
                     WHERE user_id = ${userId} 
-                    ORDER BY embedding <=> vector(${queryEmb})
+                    ORDER BY embedding <=> ${JSON.stringify(queryEmb.slice(0, 768))}::vector
                     LIMIT 2
                 `;
                 if (matches.length > 0) {

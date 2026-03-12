@@ -3,10 +3,7 @@ import multer from 'multer';
 import fs from 'fs/promises';
 import path from 'path';
 import sql from '../db.js';
-import { uploadToS3 } from '../s3.js';
 import { generateEmbedding } from '../embeddings.js';
-import { uploadToMongo, getBucket } from '../mongodb.js';
-import { ObjectId } from 'mongodb';
 
 const router = express.Router();
 const upload = multer({
@@ -14,18 +11,19 @@ const upload = multer({
     limits: { fileSize: 15 * 1024 * 1024 },
 });
 
-// Serve files from MongoDB GridFS
+// Serve files from Neon DB
 router.get('/file/:id', async (req, res) => {
     try {
-        const bucket = getBucket();
-        const id = new ObjectId(req.params.id);
+        const id = req.params.id;
+        const [report] = await sql`SELECT file_data, file_mime_type FROM reports WHERE id = ${id}`;
         
-        const files = await bucket.find({ _id: id }).toArray();
-        if (!files.length) return res.status(404).send('File not found');
+        if (!report || !report.file_data) {
+            return res.status(404).send('File not found');
+        }
 
-        res.setHeader('Content-Type', files[0].contentType || 'application/octet-stream');
-        const downloadStream = bucket.openDownloadStream(id);
-        downloadStream.pipe(res);
+        const buffer = Buffer.from(report.file_data, 'base64');
+        res.setHeader('Content-Type', report.file_mime_type || 'application/octet-stream');
+        res.send(buffer);
     } catch (err) {
         console.error('File fetch error:', err);
         res.status(500).send('Error retrieving file');
@@ -206,49 +204,43 @@ router.post('/report', upload.single('report'), async (req, res) => {
         const report = await analyseExtractedText(extractedText, patient);
         await logToFile(`Analysis result for user ${patient.id || 'ANONYMOUS'}: ${report?.report_name || 'Generic'}`);
 
-        // Stage 3: Storage (MongoDB GridFS) & Embeddings
-        let fileUrl = null;
-        let embedding = null;
-
+        // Stage 3 & 4: Storage & Embeddings & Metadata Save (All in Neon)
         if (patient.id) {
             try {
-                await logToFile(`Uploading to MongoDB GridFS...`);
-                const fileId = await uploadToMongo(buffer, originalname, mimetype);
-                fileUrl = `/api/upload/file/${fileId}`;
-                await logToFile(`MongoDB save success: ${fileUrl}`);
-
                 await logToFile(`Generating embeddings...`);
                 const embeddingText = `Report: ${report.report_name}. Date: ${report.report_date}. Brief: ${report.brief}. Findings: ${JSON.stringify(report.findings)}`;
-                embedding = await generateEmbedding(embeddingText);
-            } catch (err) {
-                await logToFile(`NON-FATAL ERROR (Storage/Embeddings): ${err.message}`);
-            }
-        }
+                const embedding = await generateEmbedding(embeddingText);
 
-        // Stage 4: Persist to Database (Reports only, no chat history)
-        if (patient.id) {
-            await logToFile(`Attempting to save report metadata for user: ${patient.id}`);
-            try {
+                await logToFile(`Saving report and file to Neon DB...`);
                 const markersJson = JSON.stringify(report?.findings || []);
                 const reportDate = report?.report_date && !isNaN(Date.parse(report.report_date))
                     ? new Date(report.report_date)
                     : new Date();
 
-                // Save to reports table for medical insights
-                await sql`
+                // Convert buffer to base64 for storage
+                const base64File = buffer.toString('base64');
+
+                const [savedReport] = await sql`
                     INSERT INTO reports (
-                        user_id, lab_name, report_date, summary, brief, purpose, file_url, markers, risk_level, embedding
+                        user_id, lab_name, report_date, summary, brief, purpose, markers, risk_level, embedding, file_data, file_mime_type
                     ) VALUES (
                         ${patient.id}, ${report?.report_name || originalname}, ${reportDate}, ${report?.summary || ''}, 
-                        ${report?.brief || ''}, ${report?.purpose || ''}, ${fileUrl}, ${markersJson}, ${report?.overall_status || 'Normal'},
-                        ${embedding ? sql`vector(${embedding})` : null}
+                        ${report?.brief || ''}, ${report?.purpose || ''}, ${markersJson}, ${report?.overall_status || 'Normal'},
+                        ${embedding ? sql`${JSON.stringify(embedding.slice(0, 768))}::vector` : null},
+                        ${base64File}, ${mimetype}
                     )
+                    RETURNING id
                 `;
 
-                await logToFile(`SUCCESS: Report metadata saved to database.`);
-            } catch (dbErr) {
-                await logToFile(`DATABASE ERROR: ${dbErr.message}`);
-                console.error('DB Insert Error:', dbErr);
+                const fileUrl = `/api/upload/file/${savedReport.id}`;
+                
+                // Update file_url in the same row
+                await sql`UPDATE reports SET file_url = ${fileUrl} WHERE id = ${savedReport.id}`;
+
+                await logToFile(`SUCCESS: Report and file saved to database. ID: ${savedReport.id}`);
+            } catch (err) {
+                await logToFile(`DATABASE ERROR: ${err.message}`);
+                console.error('DB Insert Error:', err);
             }
         }
 
