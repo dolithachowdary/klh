@@ -18,7 +18,7 @@ RESPONSE FORMAT:
 
 // POST /
 router.post('/', async (req, res) => {
-    let { messages, userId } = req.body;
+    let { messages, userId, reportContext } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
         return res.status(400).json({ error: 'messages array required' });
@@ -27,9 +27,14 @@ router.post('/', async (req, res) => {
     const lastMsg = messages[messages.length - 1].content;
 
     try {
-        // 1. RAG: Vector Search (keep this as reports remain in Neon)
+        // 1. Context: Use explicit report context if provided, else RAG Vector Search
         let context = "No specific report context found.";
-        if (userId) {
+        
+        if (reportContext) {
+            context = `Focus on this specific report: ${reportContext.brief || reportContext.report_name || 'Lab Report'}. 
+            Summary: ${reportContext.summary || 'N/A'}. 
+            Detailed Markers: ${JSON.stringify(reportContext.markers || [])}`;
+        } else if (userId) {
             try {
                 const queryEmb = await generateEmbedding(lastMsg);
                 const matches = await sql`

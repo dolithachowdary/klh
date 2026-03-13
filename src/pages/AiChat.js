@@ -59,6 +59,53 @@ export const AiChat = (parent, { onBack, user, autoOpenPin = false, reportContex
       </svg>
     </div>`;
 
+
+  async function fetchReports() {
+    if (!user?.id) return [];
+    try {
+      const res = await fetch(`${API_BASE}/api/report/user/${user.id}`);
+      return await res.json();
+    } catch (err) {
+      console.error('Fetch reports error:', err);
+      return [];
+    }
+  }
+
+  async function handleReportSelection(reportId, label) {
+    if (isTyping) return;
+    
+    displayMsgs.push({ role: 'user', text: `Explain my ${label}`, time: formatTime(new Date()) });
+    history.push({ role: 'user', content: `Explain my ${label}` });
+    isTyping = true;
+    refreshMessages(true);
+
+    try {
+      const reports = await fetchReports();
+      const report = reports.find(r => r.id === reportId);
+      
+      const res = await fetch(`${API_BASE}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          messages: history, 
+          userId: user?.id,
+          reportContext: report
+        }),
+      });
+      const data = await res.json();
+      const reply = data.reply || data.error || 'Sorry, something went wrong.';
+      
+      history.push({ role: 'assistant', content: reply });
+      refreshMessages(false);
+      typeWriter(reply, () => { isTyping = false; });
+
+    } catch (err) {
+      displayMsgs.push({ role: 'bot', text: 'Network error. Please try again.', time: formatTime(new Date()) });
+      isTyping = false;
+      refreshMessages(false);
+    }
+  }
+
   function renderMessages() {
     return displayMsgs.map(m => m.role === 'bot'
       ? `<div style="display:flex; gap:0.7rem; align-items:flex-start; margin-bottom:1rem;">
@@ -68,6 +115,17 @@ export const AiChat = (parent, { onBack, user, autoOpenPin = false, reportContex
              <div style="background:white; border-radius:4px 18px 18px 18px; padding:0.7rem 0.9rem;
                          box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid #f1f5f9;">
                <p style="font-size:0.82rem; color:var(--text-main); line-height:1.5;">${parseMd(m.text)}</p>
+               ${m.options ? `
+                 <div style="display:flex; flex-direction:column; gap:0.55rem; margin-top:0.8rem;">
+                   ${m.options.map(opt => `
+                     <button class="report-select-btn" data-id="${opt.id}" data-label="${opt.label}"
+                             style="background:#f8fafc; color:var(--primary); border:1.5px solid var(--primary); border-radius:12px; padding:0.65rem 0.9rem; font-size:0.78rem; font-weight:700; cursor:pointer; text-align:left; display:flex; align-items:center; gap:8px;">
+                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                       ${opt.label}
+                     </button>
+                   `).join('')}
+                 </div>
+               ` : ''}
              </div>
              <p style="font-size:0.58rem; color:var(--text-muted); margin-top:3px;">${m.time}</p>
            </div>
@@ -144,6 +202,30 @@ export const AiChat = (parent, { onBack, user, autoOpenPin = false, reportContex
       return;
     }
 
+    if (trimmedText.toLowerCase().includes('explain my report')) {
+      isTyping = true;
+      refreshMessages(true);
+      const reports = await fetchReports();
+      isTyping = false;
+      
+      if (reports.length === 0) {
+        const reply = "I couldn't find any reports in your history. You can upload one using the paperclip icon! 📎";
+        displayMsgs.push({ role: 'bot', text: reply, time: formatTime(new Date()) });
+      } else {
+        displayMsgs.push({ 
+          role: 'bot', 
+          text: "I found your previous reports. Which one would you like me to explain?",
+          options: reports.map(r => ({
+            id: r.id,
+            label: `${r.lab_name || r.report_name || 'Report'} (${new Date(r.report_date).toLocaleDateString()})`
+          })),
+          time: formatTime(new Date()) 
+        });
+      }
+      refreshMessages(false);
+      return;
+    }
+
     history.push({ role: 'user', content: trimmedText });
     displayMsgs.push({ role: 'user', text: trimmedText, time: formatTime(new Date()) });
     isTyping = true;
@@ -153,7 +235,11 @@ export const AiChat = (parent, { onBack, user, autoOpenPin = false, reportContex
       const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history, userId: user?.id }),
+        body: JSON.stringify({ 
+          messages: history, 
+          userId: user?.id,
+          reportContext: reportContext 
+        }),
       });
       const data = await res.json();
       const reply = data.reply || data.error || 'Sorry, something went wrong.';
@@ -350,6 +436,15 @@ export const AiChat = (parent, { onBack, user, autoOpenPin = false, reportContex
       e.stopPropagation();
       pinMenu.style.display = pinMenu.style.display === 'block' ? 'none' : 'block';
     });
+
+    // Delegated listener for report selection
+    parent.addEventListener('click', e => {
+      const btn = e.target.closest('.report-select-btn');
+      if (btn) {
+        handleReportSelection(btn.dataset.id, btn.dataset.label);
+      }
+    });
+
     document.addEventListener('click', () => { if (pinMenu) pinMenu.style.display = 'none'; });
     pinMenu.addEventListener('click', e => e.stopPropagation());
 

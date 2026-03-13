@@ -28,8 +28,20 @@ export const Dashboard = (parent, user) => {
 
     const homeContent = () => {
         const todayLogs = medicationLogs || [];
-        const takenCount = medications.filter(m => todayLogs.some(l => l.medication_id === m.id)).length;
-        const totalCount = medications.length;
+        
+        // Expand medications into individual doses, matching Medication.js logic
+        const dailySchedule = [];
+        medications.forEach(m => {
+            // frequency is an array of dose types like ['morning', 'evening']
+            const freq = Array.isArray(m.frequency) ? m.frequency : [];
+            freq.forEach(dose => {
+                const isTaken = todayLogs.some(l => l.medication_id === m.id && l.dose_type === dose);
+                dailySchedule.push({ ...m, dose_type: dose, taken: isTaken });
+            });
+        });
+
+        const takenCount = dailySchedule.filter(d => d.taken).length;
+        const totalCount = dailySchedule.length;
 
         return `
     <div class="tab-content fade-in">
@@ -122,16 +134,16 @@ export const Dashboard = (parent, user) => {
           <span style="color:var(--text-muted); font-size:0.75rem; font-weight:600;">${takenCount} of ${totalCount} taken</span>
         </div>
         <div style="display:flex; flex-direction:column; gap:0.65rem; padding-bottom:1.5rem;">
-          ${medications.length === 0 ? `
+          ${dailySchedule.length === 0 ? `
             <div style="background:#f8fafc; border-radius:16px; padding:1.5rem; text-align:center; border:1px dashed #cbd5e1; cursor:pointer;" id="tab-medication-link-empty">
                 <p style="font-size:0.75rem; color:var(--text-muted);">No medications scheduled for today.</p>
             </div>
-          ` : medications.map(m => {
-            const isTaken = todayLogs.some(l => l.medication_id === m.id);
+          ` : dailySchedule.map(m => {
+            const isTaken = m.taken;
             return `
             <div style="background:white; border-radius:16px; padding:0.85rem 1rem; display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f5f9; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width:40px; height:40px; background:${isTaken ? '#dcfce7' : '#f1f5f9'}; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;" class="med-toggle-btn" data-id="${m.id}" data-taken="${isTaken}">
+                <div style="width:40px; height:40px; background:${isTaken ? '#dcfce7' : '#f1f5f9'}; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;" class="med-toggle-btn" data-id="${m.id}" data-type="${m.dose_type}" data-taken="${isTaken}">
                   ${isTaken
                 ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
                 : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><circle cx="12" cy="12" r="10"/></svg>`
@@ -139,7 +151,7 @@ export const Dashboard = (parent, user) => {
                 </div>
                 <div class="med-info-click" data-id="${m.id}" style="cursor:pointer;">
                   <p style="font-weight:700; font-size:0.82rem; color:var(--text-main);">${m.name}</p>
-                  <p style="font-size:0.7rem; color:var(--text-muted);">${m.dosage || ''} · ${m.frequency || 'Daily'}</p>
+                  <p style="font-size:0.7rem; color:var(--text-muted);">${m.dosage || ''} · ${m.dose_type.charAt(0).toUpperCase() + m.dose_type.slice(1)}</p>
                 </div>
               </div>
               ${isTaken
@@ -260,6 +272,7 @@ export const Dashboard = (parent, user) => {
                 e.stopPropagation();
                 const btn = e.target.closest('.med-toggle-btn');
                 const medId = btn.dataset.id;
+                const doseType = btn.dataset.type;
                 const taken = btn.dataset.taken === 'true';
                 
                 try {
@@ -270,7 +283,7 @@ export const Dashboard = (parent, user) => {
                             user_id: user.id,
                             medication_id: medId,
                             log_date: new Date().toISOString().split('T')[0],
-                            dose_type: 'morning', // default for now
+                            dose_type: doseType,
                             taken: !taken
                         })
                     });
